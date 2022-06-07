@@ -8,14 +8,14 @@ typedef struct sound_io_pointers {
 } SoundIO;
 
 typedef struct client_io_pointers {
-    SoundIO *sound;//popenの返したFILEポインタ
-    int sfd;//サーバーのfd
+    SoundIO *sound;
+    int sfd;
 } ClientIO;
 
 typedef struct server_io_pointers {
-    SoundIO *sound;//popenの返したFILEポインタ
-    int clinet_socket_fd;//acceptの返り値
-    int server_socket_fd;//サーバーのsocket
+    SoundIO *sound;
+    int clinet_socket_fd;
+    int server_socket_fd;
 } ServerIO;
 
 SoundIO *empty_sound_io();
