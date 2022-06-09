@@ -12,12 +12,12 @@ void launch_server(int port, ServerIO *sio) {
 
     listen(ssfd, 10);
 
-    struct sockaddr_in *clinet_addr = INITIALIZE(struct sockaddr_in);
+    struct sockaddr_in *client_addr = INITIALIZE(struct sockaddr_in);
     socklen_t _len;
-    int csfd = accept(ssfd, (struct sockaddr *)clinet_addr, &_len);
-
-    sio->clinet_socket_fd = csfd;
+    int csfd = accept(ssfd, (struct sockaddr *)client_addr, &_len);
+    add_client(sio,csfd);
     sio->server_socket_fd = ssfd;
+    
 }
 
 void launch_client(char *ip, int port, ClientIO *cio) {
