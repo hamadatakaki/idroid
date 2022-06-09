@@ -4,6 +4,7 @@
 #include <pthread.h>
 
 #define N 512
+#define CLIENT_NUM 10// number of client
 
  typedef struct share_data{
     ServerIO *sio;
@@ -68,27 +69,39 @@ int main(int argc, char **argv) {
     }
 
     int port = atoi(argv[1]);
-    ServerIO *sio = empty_server_io();
-
-    // preprocess - launch server
-    printf("launch server\n");
-    launch_server(port, sio);
-
-    // preprocess - open sound IO
-    int err = open_stdio(sio->sound);
-    if (err) {
-        close_server_io(sio);
-        return 1;
+    ServerIO *list_sio[CLIENT_NUM];
+    for(int i = 0;i<CLIENT_NUM;i++){
+        list_sio[i] = empty_server_io();
     }
 
-    ShareData share_data[2];
-    pthread_t t[2];
-    share_data[0].sio = sio;
-    share_data[1].sio = sio;
-    pthread_create(&t[0],NULL,(void*)rec,&share_data[0]);
-    pthread_create(&t[1],NULL,(void*)play,&share_data[1]);
-    pthread_join(t[0],NULL);
-    pthread_join(t[1],NULL);
+    ShareData share_data[CLIENT_NUM*2];
+    pthread_t t[CLIENT_NUM*2];
+
+    // preprocess - launch server
+    for (int i = 0; i < CLIENT_NUM; i++){
+        printf("launch server %d\n",i);
+        launch_server(port, list_sio[i]);// sioへの書き込み
+        printf("connect success\n");
+        // preprocess - open sound IO
+        int err = open_stdio(list_sio[i]->sound);
+        if (err) {
+            close_server_io(list_sio[i]);
+            return 1;
+        }
+        
+        share_data[2*i].sio = list_sio[i];
+        share_data[2*i+1].sio = list_sio[i];
+        pthread_create(&t[2*i],NULL,(void*)rec,&share_data[2*i]);
+        pthread_create(&t[2*i+1],NULL,(void*)play,&share_data[2*i+1]);
+        pthread_join(t[2*i],NULL);
+        pthread_join(t[2*i+1],NULL);
+
+    }
+    
+
+    
+
+    
 
     return 0;
 }
