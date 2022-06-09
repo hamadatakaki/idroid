@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
     // preprocess - launch client
     printf("launch client\n");
-    launch_client(ip_addr, port, cio);
+    launch_client(ip_addr, port, cio);//cioに書き込み
 
     // preprocess - open sound IO
     int err = open_stdio(cio->sound);
