@@ -15,7 +15,6 @@ typedef struct client_io_pointers {
 } ClientIO;
 
 typedef struct server_io_pointers {
-    SoundIO *sound;
     int client_num;
     int max_client_fd;
     int client_socket_fd[CLIENT_MAX_NUM];

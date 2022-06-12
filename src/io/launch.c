@@ -1,5 +1,7 @@
 #include "launch.h"
 
+#include <assert.h>
+
 void launch_server(int port, ServerIO *sio) {
     // server socket fd
     int ssfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -9,14 +11,21 @@ void launch_server(int port, ServerIO *sio) {
     addr->sin_port = htons(port);
     addr->sin_addr.s_addr = INADDR_ANY;
     bind(ssfd, (struct sockaddr *)addr, sizeof(struct sockaddr_in));
-
     listen(ssfd, 10);
+
+    sio->server_socket_fd = ssfd;
+}
+
+int accept_new_client(ServerIO *sio) {
+    assert(sio->server_socket_fd >= 0);
 
     struct sockaddr_in *client_addr = INITIALIZE(struct sockaddr_in);
     socklen_t _len;
-    int csfd = accept(ssfd, (struct sockaddr *)client_addr, &_len);
-    add_client(sio, csfd);
-    sio->server_socket_fd = ssfd;
+    int csfd = accept(sio->server_socket_fd, (struct sockaddr *)client_addr, &_len);
+    int result = add_client(sio, csfd);
+
+    assert(result >= 0);
+    return result;
 }
 
 void launch_client(char *ip, int port, ClientIO *cio) {
