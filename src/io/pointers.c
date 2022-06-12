@@ -8,10 +8,10 @@ SoundIO *empty_sound_io() {
 }
 
 void close_sound_io(SoundIO *sound) {
-    if(sound->rec_fp != NULL) {
+    if (sound->rec_fp != NULL) {
         pclose(sound->rec_fp);
     }
-    if(sound->play_fp != NULL) {
+    if (sound->play_fp != NULL) {
         pclose(sound->play_fp);
     }
     free(sound);
@@ -36,7 +36,7 @@ void close_client_io(ClientIO *cio) {
 
 ServerIO *empty_server_io() {
     ServerIO *sio = INITIALIZE(ServerIO);
-    for (int i = 0;i < CLIENT_MAX_NUM; i++){
+    for (int i = 0; i < CLIENT_MAX_NUM; i++) {
         sio->client_socket_fd[i] = -1;
     }
     sio->max_client_fd = -1;
@@ -48,7 +48,7 @@ ServerIO *empty_server_io() {
 }
 
 void close_server_io(ServerIO *sio) {
-    for (int i = 0; i < sio->client_num; i++){
+    for (int i = 0; i < sio->client_num; i++) {
         if (sio->client_socket_fd >= 0) {
             close(sio->client_socket_fd[i]);
         }
@@ -60,12 +60,12 @@ void close_server_io(ServerIO *sio) {
     free(sio);
 }
 
-int add_client(ServerIO *sio, int client_fd){
-    if(sio->client_num >= CLIENT_MAX_NUM){
+int add_client(ServerIO *sio, int client_fd) {
+    if (sio->client_num >= CLIENT_MAX_NUM) {
         return -1;
     }
     sio->client_socket_fd[sio->client_num] = client_fd;
-    if (client_fd > sio->max_client_fd){
+    if (client_fd > sio->max_client_fd) {
         sio->max_client_fd = client_fd;
     }
     sio->client_num += 1;

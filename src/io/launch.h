@@ -1,9 +1,9 @@
 #pragma once
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
-#include <arpa/inet.h>
 
 #include "pointers.h"
 
