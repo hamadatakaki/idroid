@@ -5,11 +5,11 @@
 
 #define N 512
 
- typedef struct share_data{
+typedef struct client_share_data{
     ClientIO *cio;
     // char send_data[N];
     // char recv_data[N];
-} ShareData;
+} ClientShareData;
 
 void show_usage() {
     printf("usage:\n");
@@ -17,14 +17,13 @@ void show_usage() {
     // printf("  $cmd help:   show usage\n");
 }
 
-void play(void *arg){
-    ShareData *pd = (ShareData *)arg;
-    ClientIO *cio = pd->cio;
-    char recv_data[N];
+void play(ClientIO *cio) {
     int n;
+    char data[N];
+
     while(1){
         // play: receive and write
-        n = recv(cio->sfd, recv_data, N, 0);
+        n = recv(cio->sfd, data, N, 0);
         
         if (n < 0) {
             close_client_io(cio);
@@ -32,19 +31,17 @@ void play(void *arg){
             exit(1);
         }
 
-        n = fwrite(recv_data, sizeof(char), n, cio->sound->play_fp);
-    }
-
+        n = fwrite(data, sizeof(char), n, cio->sound->play_fp);
+    } 
 }
 
-void rec(void *arg){
-    ShareData *pd = (ShareData *)arg;
-    ClientIO *cio = pd->cio;
-    char send_data[N];
+void rec(ClientIO *cio) {
     int n;
-    // rec: read and send
+    char data[N];
+
     while(1){
-        n = fread(send_data, sizeof(char), N, cio->sound->rec_fp);
+        // rec: read and send
+        n = fread(data, sizeof(char), N, cio->sound->rec_fp);
         
         if (n < 0) {
             close_client_io(cio);
@@ -52,8 +49,18 @@ void rec(void *arg){
             exit(1);
         }
 
-        send(cio->sfd, send_data, n, 0);
+        send(cio->sfd, data, n, 0);
     }
+}
+
+void play_on_pthread(void *arg){
+    ClientShareData *pd = (ClientShareData *)arg;
+    play(pd->cio);
+}
+
+void rec_on_pthread(void *arg){
+    ClientShareData *pd = (ClientShareData *)arg;
+    rec(pd->cio);
 }
 
 int main(int argc, char **argv) {
@@ -79,14 +86,14 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ShareData share_data[2];
-    pthread_t t[2];
-    share_data[0].cio = cio;
-    share_data[1].cio = cio;
-    pthread_create(&t[0],NULL,(void*)rec,&share_data[0]);
-    pthread_create(&t[1],NULL,(void*)play,&share_data[1]);
-    pthread_join(t[0],NULL);
-    pthread_join(t[1],NULL);
+    ClientShareData *share = INITIALIZE(ClientShareData);
+    share->cio = cio;
+    
+    pthread_t t_rec, t_play;
+    pthread_create(&t_rec, NULL,(void*)rec, share);
+    pthread_create(&t_play, NULL,(void*)play, share);
+    pthread_join(t_rec,NULL);
+    pthread_join(t_play, NULL);
 
     return 0;
 }
