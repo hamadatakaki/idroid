@@ -3,8 +3,6 @@
 #include "io/launch.h"
 #include "io/pointers.h"
 
-#define N 512
-
 typedef struct client_share_data {
     ClientIO *cio;
 } ClientShareData;
@@ -16,11 +14,11 @@ void show_usage() {
 
 void play(ClientIO *cio) {
     int n;
-    char data[N];
+    char data[DATA_FETCH_SIZE];
 
     while (1) {
         // play: receive and write
-        n = recv(cio->sfd, data, N, 0);
+        n = recv(cio->sfd, data, DATA_FETCH_SIZE, 0);
 
         if (n < 0) {
             close_client_io(cio);
@@ -34,11 +32,11 @@ void play(ClientIO *cio) {
 
 void rec(ClientIO *cio) {
     int n;
-    char data[N];
+    char data[DATA_FETCH_SIZE];
 
     while (1) {
         // rec: read and send
-        n = fread(data, sizeof(char), N, cio->sound->rec_fp);
+        n = fread(data, sizeof(char), DATA_FETCH_SIZE, cio->sound->rec_fp);
 
         if (n < 0) {
             close_client_io(cio);

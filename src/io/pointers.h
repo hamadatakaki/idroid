@@ -2,8 +2,6 @@
 
 #include "../utils.h"
 
-#define CLIENT_MAX_NUM 10
-
 typedef struct sound_io_pointers {
     FILE *rec_fp;
     FILE *play_fp;
@@ -15,9 +13,9 @@ typedef struct client_io_pointers {
 } ClientIO;
 
 typedef struct server_io_pointers {
-    int client_num;
+    int client_size;
     int max_client_fd;
-    int client_socket_fd[CLIENT_MAX_NUM];
+    int client_socket_fd[MAX_CLIENT_SIZE];
     int server_socket_fd;
 } ServerIO;
 

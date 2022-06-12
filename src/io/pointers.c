@@ -40,17 +40,17 @@ ServerIO *empty_server_io() {
     sio->server_socket_fd = -1;
 
     // client sockets
-    for (int i = 0; i < CLIENT_MAX_NUM; i++) {
+    for (int i = 0; i < MAX_CLIENT_SIZE; i++) {
         sio->client_socket_fd[i] = -1;
     }
     sio->max_client_fd = -1;
-    sio->client_num = 0;
+    sio->client_size = 0;
 
     return sio;
 }
 
 void close_server_io(ServerIO *sio) {
-    for (int i = 0; i < sio->client_num; i++) {
+    for (int i = 0; i < sio->client_size; i++) {
         if (sio->client_socket_fd >= 0) {
             close(sio->client_socket_fd[i]);
         }
@@ -63,14 +63,14 @@ void close_server_io(ServerIO *sio) {
 
 int add_client(ServerIO *sio, int client_fd) {
     // ServerIO が現在のクライアント数なども保存するため、更新処理を同時に行う
-    if (sio->client_num >= CLIENT_MAX_NUM) {
+    if (sio->client_size >= MAX_CLIENT_SIZE) {
         return -1;
     }
 
-    sio->client_socket_fd[sio->client_num] = client_fd;
+    sio->client_socket_fd[sio->client_size] = client_fd;
     if (client_fd > sio->max_client_fd) {
         sio->max_client_fd = client_fd;
     }
-    sio->client_num += 1;
-    return sio->client_num;
+    sio->client_size += 1;
+    return sio->client_size;
 }
