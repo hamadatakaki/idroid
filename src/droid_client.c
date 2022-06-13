@@ -85,8 +85,8 @@ int main(int argc, char **argv) {
     share->cio = cio;
 
     pthread_t t_rec, t_play;
-    pthread_create(&t_rec, NULL, (void *)rec, share);
-    pthread_create(&t_play, NULL, (void *)play, share);
+    pthread_create(&t_rec, NULL, (void *)rec_on_pthread, share);
+    pthread_create(&t_play, NULL, (void *)play_on_pthread, share);
     pthread_join(t_rec, NULL);
     pthread_join(t_play, NULL);
 

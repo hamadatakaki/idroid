@@ -25,7 +25,7 @@ int accept_new_client(ServerIO *sio) {
     int result = add_client(sio, csfd);
 
     assert(result >= 0);
-    return result;
+    return csfd;
 }
 
 void launch_client(char *ip, int port, ClientIO *cio) {

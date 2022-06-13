@@ -1,7 +1,16 @@
 #include "io/launch.h"
 #include "io/pointers.h"
 
+#include <netinet/in.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+typedef struct server_share_data {
+    ServerIO *sio;
+    int client_from_fd;
+} ServerShareData;
 
 void show_usage() {
     printf("usage:\n");
@@ -12,6 +21,8 @@ void show_usage() {
 void through(ServerIO *sio, int client_from_fd) {
     int n;
     char data[DATA_FETCH_SIZE];
+
+    // fd_set fds, readfds;
 
     while (1) {
         n = recv(client_from_fd, data, DATA_FETCH_SIZE, 0);
@@ -26,13 +37,18 @@ void through(ServerIO *sio, int client_from_fd) {
         for (int i = 0; i < sio->client_size; i++) {
             int client_to_fd = sio->client_socket_fd[i];
 
-            if (client_from_fd == client_to_fd) {
-                break;
+            if (client_from_fd != client_to_fd) {
+                send(client_to_fd, data, n / sio->client_size, 0);
             } else {
-                send(client_to_fd, data, n, 0);
+                continue;
             }
         }
     }
+}
+
+void through_on_pthread(void *arg) {
+    ServerShareData *share = (ServerShareData *)arg;
+    through(share->sio, share->client_from_fd);
 }
 
 int main(int argc, char **argv) {
@@ -55,33 +71,32 @@ int main(int argc, char **argv) {
     printf("launch server\n");
     launch_server(port, sio);
 
-    // accept, pth_create, pth_joinのくりかえし
+    // preprocess - thread initialize
+    pthread_t threads[MAX_CLIENT_SIZE];
+    ServerShareData *shares[MAX_CLIENT_SIZE];
 
-    char buf[2048];
-    fd_set fds, readfds;
-    FD_ZERO(&readfds);
-    while (1) {
-        //
-        FD_SET(sio->client_socket_fd[sio->client_size], &readfds);
-        memcpy(&fds, &readfds, sizeof(fd_set));
-        select(sio->max_client_fd, &fds, NULL, NULL, NULL);
-        printf("cccc");
-        for (int i = 0; i < sio->client_size; i++) {
-            printf("aaaa");
-            if (FD_ISSET(sio->client_socket_fd[sio->client_size], &fds)) {
-                memset(buf, 0, sizeof(buf));
-                printf("bbbb");
-                int n = recv(sio->client_socket_fd[sio->client_size], buf, sizeof(buf), 0);
-                printf("n is %d\n", n);
-            }
-        }
+    for (int i = 0; i < MAX_CLIENT_SIZE; i++) {
+        shares[i] = INITIALIZE(ServerShareData);
+        shares[i]->sio = sio;
     }
 
-    // share_data[2*i+1].sio = sio;
-    // pthread_create(&t[0], NULL, (void *)rec, &share_data);
-    // pthread_create(&t[2*i+1],NULL,(void*)play,&share_data[2*i+1]);
-    // pthread_join(t[0], NULL);
-    // pthread_join(t[2*i+1],NULL);
+    // main routine
+    for (int i = 0; i < MAX_CLIENT_SIZE + 1; i++) {
+        // clientの同時接続数が可能な範囲で最大に到達
+        if (i >= MAX_CLIENT_SIZE) {
+            fprintf(stdout, "[warning] max clients accessed.\n");
+            break;
+        }
+
+        printf("[log] waiting access from client%02d.\n", i);
+
+        // accept, pth_create, pth_join
+        shares[i]->client_from_fd = accept_new_client(sio);
+        pthread_create(&threads[i], NULL, (void *)through_on_pthread, shares[i]);
+        pthread_detach(threads[i]);
+        fprintf(stdout, "[log] client%02d connected\n", i);
+        fprintf(stdout, "[log]     fd: %d\n", shares[i]->client_from_fd);
+    }
 
     return 0;
 }
